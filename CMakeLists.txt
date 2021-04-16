@@ -15,6 +15,8 @@ set ( INCLUDEDIR "include")
 set ( INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/${LIBDIR} )
 set ( INSTALL_INCLUDEDIR ${CMAKE_INSTALL_PREFIX}/${INCLUDEDIR} )
 
+set ( BUILD_ARCHIVE ON CACHE BOOL "build a static library instead of shared")
+
 file ( STRINGS "${CMAKE_SOURCE_DIR}/.VERSION" VERSION )
 string( REPLACE "." ";" VERSION_LIST ${VERSION} )
 list(GET VERSION_LIST 0 VERSION_MAJOR)
@@ -26,8 +28,25 @@ message ( STATUS "CMake build configuration for ${CMAKE_PROJECT_NAME} ${PROJECT_
 string ( TOLOWER ${CMAKE_PROJECT_NAME} PACKAGE_NAME )
 set ( PACKAGE_VERSION "${PACKAGE_NAME}-${VERSION}" )
 
+if(BUILD_ARCHIVE)
+	set(LIB_TYPE STATIC)
+else(BUILD_ARCHIVE)
+	set(LIB_TYPE SHARED)
+endif()
+
 file ( GLOB SRCS "src/*.c" )
-add_library ( ${CMAKE_PROJECT_NAME} SHARED ${SRCS} )
+add_library ( ${CMAKE_PROJECT_NAME} ${LIB_TYPE} ${SRCS} )
+
+# Add definitions to make this build compatible with Windows.
+if(WIN32)
+	target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC 
+	# Use windows versions of io functions.
+		ftello=ftell fseeko=fseek 
+	# pass definition of typedef not defined in windows headers.
+		off_t=int 
+	# used for bringing definition of M_PI used in tests.
+		_USE_MATH_DEFINES)
+endif()
 
 set_target_properties ( ${CMAKE_PROJECT_NAME}
   PROPERTIES
@@ -85,7 +104,9 @@ enable_testing ()
 include_directories ( include )
 set ( TEST_NAME "${CMAKE_PROJECT_NAME}_test")
 add_executable ( ${TEST_NAME} src/tests/test.c )
-target_link_libraries ( ${TEST_NAME} m )
+if (NOT WIN32)
+	target_link_libraries ( ${TEST_NAME} m )
+endif()
 target_link_libraries ( ${TEST_NAME} ${CMAKE_PROJECT_NAME} )
 add_test ( "basic_xdrfile_library" ${TEST_NAME} 0)
 add_test ( "xtc_functionality"  ${TEST_NAME} 1)
