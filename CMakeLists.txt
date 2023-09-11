@@ -14,6 +14,7 @@ set ( LIBDIR "lib")
 set ( INCLUDEDIR "include")
 set ( INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/${LIBDIR} )
 set ( INSTALL_INCLUDEDIR ${CMAKE_INSTALL_PREFIX}/${INCLUDEDIR} )
+set ( CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set ( BUILD_ARCHIVE ON CACHE BOOL "build a static library instead of shared")
 
